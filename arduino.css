@@ -1,0 +1,55 @@
+/* * GRAVADOR MUNDO DA LUA - TURBO FADE (115200 Baud)
+ * Efeito de rastro suave nos LEDs
+ */
+
+int pE[] = {2, 3, 4, 5, 6};  // Fileira E
+int pF[] = {8, 9, 10, 11, 12}; // Fileira F
+
+float brilhoLeds[5] = {0, 0, 0, 0, 0}; 
+
+// --- AJUSTES DE ESTILO ---
+float velocidadeQueda = 0.96; // Rastro: 0.98 (longo), 0.90 (curto)
+int brilhoMinimo = 2;         
+
+void setup() {
+  // Velocidade aumentada para 115200 para resposta instantânea
+  Serial.begin(115200); 
+  for (int i = 0; i < 5; i++) {
+    pinMode(pE[i], OUTPUT);
+    pinMode(pF[i], OUTPUT);
+  }
+}
+
+void loop() {
+  // 1. RECEPÇÃO DE DADOS SEM ATRASO
+  if (Serial.available() > 0) {
+    char caractere = Serial.read();
+    if (caractere >= '0' && caractere <= '5') {
+      int nivelAlvo = caractere - '0';
+      for (int i = 0; i < nivelAlvo; i++) {
+        brilhoLeds[i] = 255; // Sobe o brilho na hora
+      }
+    }
+  }
+
+  // 2. CÁLCULO DO FADE (O Rastro)
+  for (int i = 0; i < 5; i++) {
+    brilhoLeds[i] *= velocidadeQueda;
+    if (brilhoLeds[i] < brilhoMinimo) brilhoLeds[i] = 0;
+  }
+
+  // 3. ATUALIZAÇÃO DOS LEDS
+  for (int i = 0; i < 5; i++) {
+    int valor = (int)brilhoLeds[i];
+    
+    // Fileira E
+    if (pE[i] == 3 || pE[i] == 5 || pE[i] == 6) analogWrite(pE[i], valor);
+    else digitalWrite(pE[i], valor > 100 ? HIGH : LOW);
+    
+    // Fileira F
+    if (pF[i] == 9 || pF[i] == 10 || pF[i] == 11) analogWrite(pF[i], valor);
+    else digitalWrite(pF[i], valor > 100 ? HIGH : LOW);
+  }
+  
+  delay(2); // Delay mínimo para fluidez total
+}
